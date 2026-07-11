@@ -22,16 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate config.js from secret
-        env:
-          PET_CONFIG_JSON: ${{ secrets.PET_CONFIG_JSON }}
-        run: |
-          if [ -z "$PET_CONFIG_JSON" ]; then
-            echo "PET_CONFIG_JSON secret is not set in repository settings" >&2
-            exit 1
-          fi
-          printf 'const PET_CONFIG = %s;\n' "$PET_CONFIG_JSON" > config.js
-
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
