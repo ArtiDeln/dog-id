@@ -438,7 +438,6 @@ function initLocationToggle() {
           e.preventDefault();
           openMapChooser({
             label: t("contacts.openMap"),
-            query: PET_CONFIG.name,
             lat,
             lng,
           });
