@@ -252,11 +252,6 @@ body {
   border-color: var(--accent);
 }
 
-.card--reward {
-  background: var(--accent-light);
-  border-color: #c8ddd4;
-}
-
 .card__title {
   font-size: 13px;
   font-weight: 600;
@@ -438,13 +433,6 @@ body {
 
 .notes li:last-child {
   margin-bottom: 0;
-}
-
-.reward {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--accent-dark);
-  text-align: center;
 }
 
 .footer {

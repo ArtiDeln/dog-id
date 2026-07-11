@@ -22,9 +22,6 @@ const PET_CONFIG = {
     },
   ],
 
-  reward: false,
-  rewardText: "",
-
   backupContacts: [
     {
       name: "Юлия",

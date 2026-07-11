@@ -105,6 +105,11 @@ function buildViberHref(digits, messageText) {
   return `viber://chat?number=${digits}&draft=${draft}`;
 }
 
+function buildWhatsappHref(digits, messageText) {
+  const draft = encodeURIComponent(messageText);
+  return `https://wa.me/${digits}?text=${messageText}`;
+}
+
 function messengerLinks(phone, customMessage, { only, messageFallback } = {}) {
   const digits = normalizePhone(phone);
   const buildMessage = messageFallback ?? buildDefaultMessage;
@@ -134,7 +139,7 @@ function messengerLinks(phone, customMessage, { only, messageFallback } = {}) {
     {
       id: "whatsapp",
       label: t("messengers.whatsapp"),
-      href: `https://wa.me/${digits}?text=${message}`,
+      href: buildWhatsappHref(digits, messageText),
       icon: WHATSAPP_ICON,
     },
     {
@@ -520,12 +525,6 @@ function init() {
     li.textContent = note;
     notesList.appendChild(li);
   });
-
-  if (c.reward && c.rewardText) {
-    const rewardSection = document.getElementById("reward-section");
-    rewardSection.classList.remove("hidden");
-    document.getElementById("reward-text").textContent = c.rewardText;
-  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
