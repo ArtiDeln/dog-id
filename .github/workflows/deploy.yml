@@ -22,6 +22,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Bump asset cache version
+        run: |
+          VERSION="${{ github.run_number }}"
+          sed -i -E "s/(\.js\?v=)[^\"']+/\1${VERSION}/g" index.html
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
