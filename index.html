@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Потерялась собака. Помогите вернуть домой.">
+  <meta name="description" content="">
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#5c7a6b">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Кира — найдена собака</title>
+  <title></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,59 +19,50 @@
 <body>
   <main class="page">
     <header class="hero">
-      <button type="button" class="hero__photo-wrap" id="hero-photo-btn" aria-label="Открыть фото">
-        <img src="assets/kira.jpg" alt="Кира" class="hero__photo" id="hero-photo" width="400" height="400">
+      <button type="button" class="hero__photo-wrap" id="hero-photo-btn" data-i18n-aria="hero.openPhoto">
+        <img src="assets/kira.jpg" alt="" class="hero__photo" id="hero-photo" width="400" height="400">
         <span class="hero__photo-hint" id="photo-hint" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
         </span>
       </button>
-      <div class="hero__badge">🐾 Потерялась</div>
-      <h1 class="hero__name" id="pet-name">Кира</h1>
-      <p class="hero__breed" id="pet-breed">Бигль</p>
+      <div class="hero__badge" data-i18n="hero.lostBadge"></div>
+      <h1 class="hero__name" id="pet-name"></h1>
+      <p class="hero__breed" id="pet-breed"></p>
     </header>
 
     <section class="card" id="info-section">
-      <h2 class="card__title">О собаке</h2>
+      <h2 class="card__title" data-i18n="sections.about"></h2>
       <dl class="info-list" id="info-list"></dl>
       <ul class="notes" id="notes-list"></ul>
     </section>
 
     <section class="card card--urgent">
-      <h2 class="card__title">Помогите вернуть домой</h2>
-      <p class="card__text">
-        Если вы нашли эту собаку — пожалуйста, свяжитесь с нами.
-        Мы заберём её в любое удобное для вас время.
-      </p>
-    </section>
-
-    <section class="card card--location" id="location-section">
-      <h2 class="card__title">Отправить геопозицию</h2>
-      <p class="card__text">
-        Нажмите кнопку — мы получим ваше местоположение и быстрее сможем забрать собаку.
-      </p>
-      <button type="button" class="location__btn" id="location-btn">
-        <span class="location__btn-icon" aria-hidden="true">📍</span>
-        <span>Отправить где я сейчас</span>
-      </button>
-      <p class="location__status hidden" id="location-status"></p>
-      <div class="location__result hidden" id="location-result">
-        <a class="location__map-link" id="location-map-link" href="#">Открыть на карте</a>
-        <div class="location__send" id="location-send-list"></div>
-      </div>
+      <h2 class="card__title" data-i18n="sections.help"></h2>
+      <p class="card__text" data-i18n="help.text"></p>
     </section>
 
     <section class="card" id="owners-section">
-      <h2 class="card__title">Контакты</h2>
+      <h2 class="card__title" data-i18n="sections.contacts"></h2>
       <div class="owners" id="owners-list"></div>
+      <label class="location-toggle">
+        <input type="checkbox" id="include-location" class="location-toggle__input">
+        <span class="location-toggle__text" data-i18n="contacts.includeLocation"></span>
+      </label>
+      <p class="location__status hidden" id="location-status"></p>
+      <a class="location__map-link hidden" id="location-map-link" href="#" data-i18n="contacts.openMap"></a>
     </section>
 
     <section class="card" id="fallback-section">
-      <h2 class="card__title">Если не дозвониться</h2>
+      <h2 class="card__title" data-i18n="sections.fallback"></h2>
       <p class="fallback__text" id="fallback-note"></p>
       <p class="fallback__clinic">
         <strong id="fallback-name"></strong><br>
         <span id="fallback-address"></span>
       </p>
+      <details class="backup-spoiler" id="backup-section">
+        <summary class="backup-spoiler__summary" data-i18n="backup.toggle"></summary>
+        <div class="owners" id="backup-list"></div>
+      </details>
     </section>
 
     <section class="card card--reward hidden" id="reward-section">
@@ -79,22 +70,23 @@
     </section>
 
     <footer class="footer">
-      <p>Спасибо, что помогаете 🙏</p>
+      <p data-i18n="footer.thanks"></p>
     </footer>
   </main>
 
-  <div class="carousel hidden" id="carousel" role="dialog" aria-modal="true" aria-label="Фото">
-    <button type="button" class="carousel__close" id="carousel-close" aria-label="Закрыть">&times;</button>
+  <div class="carousel hidden" id="carousel" role="dialog" aria-modal="true" data-i18n-aria="carousel.title">
+    <button type="button" class="carousel__close" id="carousel-close" data-i18n-aria="carousel.close">&times;</button>
     <div class="carousel__viewport" id="carousel-viewport">
       <div class="carousel__track" id="carousel-track"></div>
     </div>
-    <button type="button" class="carousel__nav carousel__nav--prev" id="carousel-prev" aria-label="Предыдущее">&lsaquo;</button>
-    <button type="button" class="carousel__nav carousel__nav--next" id="carousel-next" aria-label="Следующее">&rsaquo;</button>
+    <button type="button" class="carousel__nav carousel__nav--prev" id="carousel-prev" data-i18n-aria="carousel.prev">&lsaquo;</button>
+    <button type="button" class="carousel__nav carousel__nav--next" id="carousel-next" data-i18n-aria="carousel.next">&rsaquo;</button>
     <div class="carousel__counter" id="carousel-counter"></div>
     <div class="carousel__dots" id="carousel-dots"></div>
   </div>
 
-  <script src="config.js?v=3"></script>
-  <script src="app.js?v=3"></script>
+  <script src="locale.ru.js?v=12"></script>
+  <script src="config.js?v=12"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>

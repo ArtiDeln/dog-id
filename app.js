@@ -8,9 +8,7 @@ function formatTel(phone) {
 
 function formatSms(phone, text) {
   const digits = normalizePhone(phone);
-  const body = encodeURIComponent(
-    text ?? `Здравствуйте! Я нашёл(ла) вашу собаку ${PET_CONFIG.name}. `
-  );
+  const body = encodeURIComponent(text ?? buildDefaultMessage());
   return `sms:${digits}?body=${body}`;
 }
 
@@ -18,8 +16,32 @@ function buildMapUrl(lat, lng) {
   return `https://yandex.ru/maps/?pt=${lng},${lat}&z=17&l=map`;
 }
 
+function getPetNameAccusative() {
+  if (PET_CONFIG.nameAccusative) return PET_CONFIG.nameAccusative;
+
+  const name = PET_CONFIG.name.trim();
+  if (name.endsWith("ия")) return `${name.slice(0, -1)}ю`;
+  if (name.endsWith("ья")) return `${name.slice(0, -1)}ю`;
+  if (name.endsWith("а")) return `${name.slice(0, -1)}у`;
+  if (name.endsWith("я")) return `${name.slice(0, -1)}ю`;
+  if (name.endsWith("й")) return `${name.slice(0, -1)}я`;
+  return `${name}а`;
+}
+
+function buildDefaultMessage() {
+  return `${t("messages.default", { nameAcc: getPetNameAccusative() })} `;
+}
+
+function buildBackupMessage() {
+  return `${t("messages.backup")} `;
+}
+
 function buildLocationMessage(lat, lng) {
-  return `Здравствуйте! Я нашёл(ла) вашу собаку ${PET_CONFIG.name}. Сейчас я здесь: ${buildMapUrl(lat, lng)}`;
+  return `${buildDefaultMessage().trim()} ${t("messages.locationSuffix", { url: buildMapUrl(lat, lng) })}`;
+}
+
+function buildBackupLocationMessage(lat, lng) {
+  return `${buildBackupMessage().trim()} ${t("messages.locationSuffix", { url: buildMapUrl(lat, lng) })}`;
 }
 
 function pluralize(n, one, few, many) {
@@ -51,14 +73,16 @@ function calculateAge(birthDateStr) {
   }
 
   if (years > 0) {
-    return `${years} ${pluralize(years, "год", "года", "лет")}`;
+    const forms = LOCALE.age.year;
+    return `${years} ${pluralize(years, forms[0], forms[1], forms[2])}`;
   }
 
   if (months > 0) {
-    return `${months} ${pluralize(months, "месяц", "месяца", "месяцев")}`;
+    const forms = LOCALE.age.month;
+    return `${months} ${pluralize(months, forms[0], forms[1], forms[2])}`;
   }
 
-  return "меньше месяца";
+  return LOCALE.age.lessThanMonth;
 }
 
 const CALL_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
@@ -71,61 +95,81 @@ const VIBER_ICON = `<svg viewBox="0 0 72.21 76.21" fill="currentColor" aria-hidd
 
 const SMS_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
 
-function messengerLinks(phone, customMessage) {
+function buildTelegramHref(digits, messageText) {
+  const text = encodeURIComponent(messageText);
+  return `tg://resolve?phone=${digits}&text=${text}`;
+}
+
+function buildViberHref(digits, messageText) {
+  const draft = encodeURIComponent(messageText);
+  return `viber://chat?number=${digits}&draft=${draft}`;
+}
+
+function messengerLinks(phone, customMessage, { only, messageFallback } = {}) {
   const digits = normalizePhone(phone);
-  const messageText =
-    customMessage ?? `Здравствуйте! Я нашёл(ла) вашу собаку ${PET_CONFIG.name}. `;
+  const buildMessage = messageFallback ?? buildDefaultMessage;
+  const messageText = customMessage ?? buildMessage();
   const message = encodeURIComponent(messageText);
 
-  return [
+  const links = [
     {
       id: "call",
-      label: "Позвонить",
+      label: t("messengers.call"),
       href: formatTel(phone),
       icon: CALL_ICON,
       primary: true,
     },
     {
       id: "telegram",
-      label: "Telegram",
-      href: `https://t.me/+${digits}`,
+      label: t("messengers.telegram"),
+      href: buildTelegramHref(digits, messageText),
       icon: TELEGRAM_ICON,
     },
     {
       id: "viber",
-      label: "Viber",
-      href: `viber://chat?number=${digits}`,
+      label: t("messengers.viber"),
+      href: buildViberHref(digits, messageText),
       icon: VIBER_ICON,
     },
     {
       id: "whatsapp",
-      label: "WhatsApp",
+      label: t("messengers.whatsapp"),
       href: `https://wa.me/${digits}?text=${message}`,
       icon: WHATSAPP_ICON,
     },
     {
       id: "sms",
-      label: "SMS",
+      label: t("messengers.sms"),
       href: formatSms(phone, messageText),
       icon: SMS_ICON,
     },
   ];
+
+  if (only) return links.filter((l) => only.includes(l.id));
+  return links;
 }
 
 function createActionButton(link, options = {}) {
   const a = document.createElement("a");
   a.className = `action${link.primary ? " action--primary" : ""}`;
   if (options.id) a.id = options.id;
-  a.href = link.href;
+  a.dataset.messenger = link.id;
+  if (options.disabled) {
+    a.classList.add("action--disabled");
+    a.setAttribute("aria-disabled", "true");
+    a.addEventListener("click", (e) => e.preventDefault());
+  } else {
+    a.href = link.href;
+  }
   a.innerHTML = `${link.icon}<span>${link.label}</span>`;
-  if (link.id === "whatsapp" || link.id === "telegram") {
+  if (link.id === "whatsapp" && !options.disabled) {
     a.target = "_blank";
     a.rel = "noopener noreferrer";
   }
   return a;
 }
 
-function renderOwnerCard(owner) {
+function renderOwnerCard(owner, customMessage, { messengersDisabled = false } = {}) {
   const card = document.createElement("div");
   card.className = "owner";
 
@@ -140,14 +184,19 @@ function renderOwnerCard(owner) {
 
   const actions = document.createElement("div");
   actions.className = "actions actions--compact";
-  messengerLinks(owner.phone)
+  messengerLinks(owner.phone, customMessage)
     .filter((l) => l.id !== "call")
     .forEach((link) =>
-      actions.appendChild(createActionButton(link, { id: `${link.id}-${owner.name}` }))
+      actions.appendChild(
+        createActionButton(link, {
+          id: `${link.id}-${owner.name}`,
+          disabled: messengersDisabled,
+        })
+      )
     );
 
   const callBtn = createActionButton(
-    messengerLinks(owner.phone).find((l) => l.id === "call"),
+    messengerLinks(owner.phone, customMessage).find((l) => l.id === "call"),
     { id: `call-${owner.name}` }
   );
   callBtn.classList.add("owner__call");
@@ -155,6 +204,162 @@ function renderOwnerCard(owner) {
 
   card.append(name, phoneLink, actions);
   return card;
+}
+
+function renderBackupContact(
+  contact,
+  customMessage,
+  { messengersDisabled = false } = {}
+) {
+  const card = document.createElement("div");
+  card.className = "owner";
+
+  const name = document.createElement("div");
+  name.className = "owner__name";
+  name.textContent = contact.name;
+
+  const phoneLink = document.createElement("a");
+  phoneLink.className = "owner__phone";
+  phoneLink.href = formatTel(contact.phone);
+  phoneLink.textContent = contact.phoneDisplay || contact.phone;
+
+  const actions = document.createElement("div");
+  actions.className = "actions actions--backup";
+  messengerLinks(contact.phone, customMessage, {
+    only: ["call", "telegram"],
+    messageFallback: buildBackupMessage,
+  }).forEach(
+    (link) =>
+      actions.appendChild(
+        createActionButton(link, {
+          id: `backup-${link.id}-${contact.name}`,
+          disabled: messengersDisabled && link.id !== "call",
+        })
+      )
+  );
+
+  card.append(name, phoneLink, actions);
+  return card;
+}
+
+function renderBackupList({ messengersDisabled = false } = {}) {
+  const list = document.getElementById("backup-list");
+  const section = document.getElementById("backup-section");
+  const contacts = PET_CONFIG.backupContacts ?? [];
+
+  if (!list || !section) return;
+
+  if (!contacts.length) {
+    section.hidden = true;
+    return;
+  }
+
+  section.hidden = false;
+  list.replaceChildren();
+  const message = getBackupContactMessage();
+  contacts.forEach((contact) =>
+    list.appendChild(
+      renderBackupContact(contact, message, { messengersDisabled })
+    )
+  );
+}
+
+const locationState = { coords: null };
+
+function getContactMessage() {
+  const checkbox = document.getElementById("include-location");
+  if (checkbox?.checked && locationState.coords) {
+    return locationState.coords.message;
+  }
+  return undefined;
+}
+
+function getBackupContactMessage() {
+  const checkbox = document.getElementById("include-location");
+  if (checkbox?.checked && locationState.coords) {
+    return locationState.coords.backupMessage;
+  }
+  return undefined;
+}
+
+function renderOwnersList({ messengersDisabled = false } = {}) {
+  const message = getContactMessage();
+  const ownersList = document.getElementById("owners-list");
+  ownersList.replaceChildren();
+  PET_CONFIG.owners.forEach((owner) =>
+    ownersList.appendChild(renderOwnerCard(owner, message, { messengersDisabled }))
+  );
+  renderBackupList({ messengersDisabled });
+}
+
+function initLocationToggle() {
+  const checkbox = document.getElementById("include-location");
+  const status = document.getElementById("location-status");
+  const mapLink = document.getElementById("location-map-link");
+
+  if (!navigator.geolocation) {
+    checkbox.disabled = true;
+    status.textContent = t("location.unsupported");
+    status.classList.remove("hidden");
+    return;
+  }
+
+  if (!window.isSecureContext) {
+    status.textContent = t("location.httpsRequired");
+    status.classList.remove("hidden");
+  }
+
+  checkbox.addEventListener("change", () => {
+    if (!checkbox.checked) {
+      locationState.coords = null;
+      status.classList.add("hidden");
+      status.classList.remove("location__status--error");
+      mapLink.classList.add("hidden");
+      renderOwnersList();
+      return;
+    }
+
+    checkbox.disabled = true;
+    status.textContent = t("location.detecting");
+    status.classList.remove("hidden", "location__status--error");
+    mapLink.classList.add("hidden");
+    renderOwnersList({ messengersDisabled: true });
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude.toFixed(6);
+        const lng = position.coords.longitude.toFixed(6);
+        const mapUrl = buildMapUrl(lat, lng);
+
+        locationState.coords = {
+          lat,
+          lng,
+          mapUrl,
+          message: buildLocationMessage(lat, lng),
+          backupMessage: buildBackupLocationMessage(lat, lng),
+        };
+
+        status.textContent = t("location.ready");
+        mapLink.href = mapUrl;
+        mapLink.target = "_blank";
+        mapLink.rel = "noopener noreferrer";
+        mapLink.classList.remove("hidden");
+        checkbox.disabled = false;
+        renderOwnersList();
+      },
+      (error) => {
+        const errors = LOCALE.location.errors;
+        locationState.coords = null;
+        checkbox.checked = false;
+        checkbox.disabled = false;
+        status.textContent = errors[error.code] ?? errors.default;
+        status.classList.add("location__status--error");
+        mapLink.classList.add("hidden");
+        renderOwnersList();
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  });
 }
 
 function initCarousel(photos) {
@@ -182,7 +387,7 @@ function initCarousel(photos) {
     slide.className = "carousel__slide";
     const img = document.createElement("img");
     img.src = src;
-    img.alt = `${PET_CONFIG.name} — фото ${i + 1}`;
+    img.alt = t("carousel.photoAlt", { name: PET_CONFIG.name, n: i + 1 });
     img.loading = i === 0 ? "eager" : "lazy";
     slide.appendChild(img);
     track.appendChild(slide);
@@ -190,7 +395,7 @@ function initCarousel(photos) {
     const dot = document.createElement("button");
     dot.type = "button";
     dot.className = "carousel__dot";
-    dot.setAttribute("aria-label", `Фото ${i + 1}`);
+    dot.setAttribute("aria-label", t("carousel.photoLabel", { n: i + 1 }));
     dot.addEventListener("click", () => goTo(i));
     dotsContainer.appendChild(dot);
   });
@@ -199,7 +404,10 @@ function initCarousel(photos) {
 
   function updateUI() {
     track.style.transform = `translateX(-${current * 100}%)`;
-    counter.textContent = `${current + 1} / ${photos.length}`;
+    counter.textContent = t("carousel.counter", {
+      current: current + 1,
+      total: photos.length,
+    });
     dots.forEach((dot, i) => dot.classList.toggle("carousel__dot--active", i === current));
     prevBtn.disabled = current === 0;
     nextBtn.disabled = current === photos.length - 1;
@@ -262,98 +470,14 @@ function initCarousel(photos) {
   updateUI();
 }
 
-function initLocationShare() {
-  const btn = document.getElementById("location-btn");
-  const status = document.getElementById("location-status");
-  const result = document.getElementById("location-result");
-  const mapLink = document.getElementById("location-map-link");
-  const sendList = document.getElementById("location-send-list");
-
-  if (!navigator.geolocation) {
-    status.textContent = "Геолокация не поддерживается в этом браузере";
-    status.classList.remove("hidden");
-    btn.disabled = true;
-    return;
-  }
-
-  if (!window.isSecureContext) {
-    status.textContent =
-      "Для геолокации нужен HTTPS — на опубликованном сайте будет работать";
-    status.classList.remove("hidden");
-  }
-
-  btn.addEventListener("click", () => {
-    btn.disabled = true;
-    btn.classList.add("location__btn--loading");
-    status.textContent = "Определяем местоположение…";
-    status.classList.remove("hidden", "location__status--error");
-    result.classList.add("hidden");
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        const lat = latitude.toFixed(6);
-        const lng = longitude.toFixed(6);
-        const mapUrl = buildMapUrl(lat, lng);
-        const message = buildLocationMessage(lat, lng);
-
-        status.textContent = "Местоположение определено — отправьте его нам:";
-        status.classList.remove("location__status--error");
-
-        mapLink.href = mapUrl;
-        mapLink.target = "_blank";
-        mapLink.rel = "noopener noreferrer";
-
-        sendList.replaceChildren();
-        PET_CONFIG.owners.forEach((owner) => {
-          const block = document.createElement("div");
-          block.className = "location-owner";
-
-          const name = document.createElement("div");
-          name.className = "location-owner__name";
-          name.textContent = owner.name;
-
-          const actions = document.createElement("div");
-          actions.className = "actions actions--compact";
-
-          messengerLinks(owner.phone, message)
-            .filter((l) => l.id !== "call")
-            .forEach((link) =>
-              actions.appendChild(
-                createActionButton(link, { id: `loc-${link.id}-${owner.name}` })
-              )
-            );
-
-          block.append(name, actions);
-          sendList.appendChild(block);
-        });
-
-        result.classList.remove("hidden");
-        btn.disabled = false;
-        btn.classList.remove("location__btn--loading");
-      },
-      (error) => {
-        const messages = {
-          1: "Нужен доступ к геолокации — разрешите в настройках браузера",
-          2: "Не удалось определить местоположение",
-          3: "Превышено время ожидания — попробуйте ещё раз",
-        };
-        status.textContent = messages[error.code] ?? "Ошибка геолокации";
-        status.classList.add("location__status--error");
-        btn.disabled = false;
-        btn.classList.remove("location__btn--loading");
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
-  });
-}
-
 function init() {
+  applyLocale();
+
   const c = PET_CONFIG;
   const age = calculateAge(c.birthDate);
   const photos = c.photos?.length ? c.photos : ["assets/kira.jpg"];
 
-  document.title = `${c.name} — найдена собака`;
+  document.title = t("meta.pageTitle", { name: c.name });
   document.getElementById("pet-name").textContent = c.name;
   document.getElementById("pet-breed").textContent = `${c.breed} · ${age}`;
 
@@ -362,24 +486,23 @@ function init() {
   heroPhoto.alt = c.name;
 
   initCarousel(photos);
-  initLocationShare();
+  initLocationToggle();
+  renderOwnersList();
 
-  const ownersList = document.getElementById("owners-list");
-  ownersList.replaceChildren();
-  c.owners.forEach((owner) => ownersList.appendChild(renderOwnerCard(owner)));
-
-  document.getElementById("fallback-note").textContent = c.fallbackClinic.note;
-  document.getElementById("fallback-name").textContent = c.fallbackClinic.name;
-  document.getElementById("fallback-address").textContent = c.fallbackClinic.address;
+  document.getElementById("fallback-note").textContent = LOCALE.content.fallbackNote;
+  document.getElementById("fallback-name").textContent =
+    LOCALE.content.fallbackClinic.name;
+  document.getElementById("fallback-address").textContent =
+    LOCALE.content.fallbackClinic.address;
 
   const infoList = document.getElementById("info-list");
   infoList.replaceChildren();
 
   const infoItems = [
-    ["Кличка", c.name],
-    ["Порода", c.breed],
-    ["Возраст", age],
-    c.chipped ? ["Чип", "Имеется"] : null,
+    [t("info.nickname"), c.name],
+    [t("info.breed"), c.breed],
+    [t("info.age"), age],
+    c.chipped ? [t("info.chip"), t("info.chipped")] : null,
   ].filter(Boolean);
 
   infoItems.forEach(([term, value]) => {
@@ -392,7 +515,7 @@ function init() {
 
   const notesList = document.getElementById("notes-list");
   notesList.replaceChildren();
-  c.notes.forEach((note) => {
+  LOCALE.content.notes.forEach((note) => {
     const li = document.createElement("li");
     li.textContent = note;
     notesList.appendChild(li);
