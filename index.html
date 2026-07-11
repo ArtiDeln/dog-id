@@ -57,7 +57,7 @@
       <p class="fallback__text" id="fallback-note"></p>
       <p class="fallback__clinic">
         <strong id="fallback-name"></strong><br>
-        <span id="fallback-address"></span>
+        <button type="button" class="fallback__address" id="fallback-address"></button>
       </p>
       <details class="backup-spoiler" id="backup-section">
         <summary class="backup-spoiler__summary" data-i18n="backup.toggle"></summary>
@@ -81,8 +81,17 @@
     <div class="carousel__dots" id="carousel-dots"></div>
   </div>
 
-  <script src="locale.ru.js?v=13"></script>
-  <script src="config.js?v=13"></script>
-  <script src="app.js?v=13"></script>
+  <div class="map-sheet hidden" id="map-sheet" role="dialog" aria-modal="true" data-i18n-aria="maps.title">
+    <div class="map-sheet__panel">
+      <h2 class="map-sheet__title" data-i18n="maps.title"></h2>
+      <p class="map-sheet__target" id="map-sheet-target"></p>
+      <div class="map-sheet__actions" id="map-sheet-actions"></div>
+      <button type="button" class="map-sheet__close" id="map-sheet-close" data-i18n="maps.cancel"></button>
+    </div>
+  </div>
+
+  <script src="locale.ru.js?v=14"></script>
+  <script src="config.js?v=14"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>

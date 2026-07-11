@@ -16,6 +16,48 @@ function buildMapUrl(lat, lng) {
   return `https://yandex.ru/maps/?pt=${lng},${lat}&z=17&l=map`;
 }
 
+function buildMapTargetLinks(target) {
+  const query = encodeURIComponent(target.query || target.label);
+  const hasAddressQuery = Boolean(target.query);
+
+  if (target.lat && target.lng) {
+    const coords = `${target.lat},${target.lng}`;
+    const yandexCoords = `${target.lng},${target.lat}`;
+
+    return [
+      {
+        label: t("maps.yandex"),
+        href: hasAddressQuery
+          ? `https://yandex.ru/maps/?text=${query}`
+          : `https://yandex.ru/maps/?pt=${yandexCoords}&z=17&l=map`,
+      },
+      {
+        label: t("maps.google"),
+        href: `https://www.google.com/maps/search/?api=1&query=${hasAddressQuery ? query : coords}`,
+      },
+      {
+        label: t("maps.apple"),
+        href: `https://maps.apple.com/?ll=${coords}&q=${query}`,
+      },
+      {
+        label: t("maps.organic"),
+        href: `geo:0,0?q=${coords}(${query})`,
+      },
+    ];
+  }
+
+  return [
+    {
+      label: t("maps.yandex"),
+      href: `https://yandex.ru/maps/?text=${query}`,
+    },
+    {
+      label: t("maps.google"),
+      href: `https://www.google.com/maps/search/?api=1&query=${query}`,
+    },
+  ];
+}
+
 function getPetNameAccusative() {
   if (PET_CONFIG.nameAccusative) return PET_CONFIG.nameAccusative;
 
@@ -271,6 +313,51 @@ function renderBackupList({ messengersDisabled = false } = {}) {
 
 const locationState = { coords: null };
 
+function openMapChooser(target) {
+  const sheet = document.getElementById("map-sheet");
+  const targetText = document.getElementById("map-sheet-target");
+  const actions = document.getElementById("map-sheet-actions");
+
+  targetText.textContent = target.label;
+  actions.replaceChildren();
+
+  buildMapTargetLinks(target).forEach((link) => {
+    const a = document.createElement("a");
+    a.className = "map-sheet__action";
+    a.href = link.href;
+    if (link.href.startsWith("http")) {
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+    }
+    a.textContent = link.label;
+    actions.appendChild(a);
+  });
+
+  sheet.classList.remove("hidden");
+  document.body.classList.add("map-sheet-open");
+}
+
+function closeMapChooser() {
+  document.getElementById("map-sheet").classList.add("hidden");
+  document.body.classList.remove("map-sheet-open");
+}
+
+function initMapChooser() {
+  const sheet = document.getElementById("map-sheet");
+  const closeBtn = document.getElementById("map-sheet-close");
+
+  closeBtn.addEventListener("click", closeMapChooser);
+  sheet.addEventListener("click", (e) => {
+    if (e.target === sheet) closeMapChooser();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !sheet.classList.contains("hidden")) {
+      closeMapChooser();
+    }
+  });
+}
+
 function getContactMessage() {
   const checkbox = document.getElementById("include-location");
   if (checkbox?.checked && locationState.coords) {
@@ -320,6 +407,7 @@ function initLocationToggle() {
       status.classList.add("hidden");
       status.classList.remove("location__status--error");
       mapLink.classList.add("hidden");
+      mapLink.onclick = null;
       renderOwnersList();
       return;
     }
@@ -346,8 +434,15 @@ function initLocationToggle() {
 
         status.textContent = t("location.ready");
         mapLink.href = mapUrl;
-        mapLink.target = "_blank";
-        mapLink.rel = "noopener noreferrer";
+        mapLink.onclick = (e) => {
+          e.preventDefault();
+          openMapChooser({
+            label: t("contacts.openMap"),
+            query: PET_CONFIG.name,
+            lat,
+            lng,
+          });
+        };
         mapLink.classList.remove("hidden");
         checkbox.disabled = false;
         renderOwnersList();
@@ -360,6 +455,7 @@ function initLocationToggle() {
         status.textContent = errors[error.code] ?? errors.default;
         status.classList.add("location__status--error");
         mapLink.classList.add("hidden");
+        mapLink.onclick = null;
         renderOwnersList();
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
@@ -491,14 +587,24 @@ function init() {
   heroPhoto.alt = c.name;
 
   initCarousel(photos);
+  initMapChooser();
   initLocationToggle();
   renderOwnersList();
 
   document.getElementById("fallback-note").textContent = LOCALE.content.fallbackNote;
   document.getElementById("fallback-name").textContent =
     LOCALE.content.fallbackClinic.name;
-  document.getElementById("fallback-address").textContent =
-    LOCALE.content.fallbackClinic.address;
+  const fallbackAddress = document.getElementById("fallback-address");
+  const clinic = LOCALE.content.fallbackClinic;
+  fallbackAddress.textContent = clinic.address;
+  fallbackAddress.addEventListener("click", () => {
+    openMapChooser({
+      label: `${clinic.name}, ${clinic.address}`,
+      query: `${clinic.name}, ${clinic.address}`,
+      lat: clinic.lat,
+      lng: clinic.lng,
+    });
+  });
 
   const infoList = document.getElementById("info-list");
   infoList.replaceChildren();

@@ -55,6 +55,15 @@ const LOCALE = {
     },
   },
 
+  maps: {
+    title: "Открыть в картах",
+    cancel: "Отмена",
+    yandex: "Яндекс Карты",
+    google: "Google Maps",
+    apple: "Apple Maps",
+    organic: "Organic Maps",
+  },
+
   messengers: {
     call: "Позвонить",
     telegram: "Telegram",
@@ -75,6 +84,8 @@ const LOCALE = {
     fallbackClinic: {
       name: "ПолиВет",
       address: "Речицкий просп. 135б, Гомель",
+      lat: "52.405372",
+      lng: "30.910278",
     },
     notes: [
       "Дружелюбная, не агрессивна",
