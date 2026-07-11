@@ -394,10 +394,12 @@ body {
 
 .fallback__address {
   appearance: none;
+  -webkit-appearance: none;
   border: none;
   background: transparent;
   padding: 2px 0;
   font: inherit;
+  font-family: inherit;
   color: var(--accent-dark);
   text-align: left;
   text-decoration: underline;
@@ -484,7 +486,9 @@ body.map-sheet-open {
 }
 
 .map-sheet__panel {
-  width: min(100%, 408px);
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 408px;
   padding: 18px;
   border-radius: var(--radius);
   background: var(--surface);
@@ -519,7 +523,10 @@ body.map-sheet-open {
   border-radius: var(--radius-sm);
   font-size: 15px;
   font-weight: 600;
+  font-family: inherit;
   text-decoration: none;
+  -webkit-appearance: none;
+  appearance: none;
   -webkit-tap-highlight-color: transparent;
 }
 
