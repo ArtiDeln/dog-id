@@ -33,7 +33,7 @@ function buildDefaultMessage() {
 }
 
 function buildBackupMessage() {
-  return `${t("messages.backup")} `;
+  return `${t("messages.backup", { nameAcc: getPetNameAccusative() })} `;
 }
 
 function buildLocationMessage(lat, lng) {
